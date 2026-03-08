@@ -308,3 +308,9 @@ document.getElementById('gallery-back').addEventListener('click', () => showScre
 ══════════════════════════════════════ */
 const allPhotos = (FOLDERS || []).flatMap(f => f.photos || []);
 initPotd(allPhotos);
+
+/* ══════════════════════════════════════
+   B O O T
+══════════════════════════════════════ */
+const allPhotos = (FOLDERS || []).flatMap(f => f.photos || []);
+initPotd(allPhotos);
