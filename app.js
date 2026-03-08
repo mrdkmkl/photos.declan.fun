@@ -1,26 +1,47 @@
-/* app.js — @mrdkmkl */
+/* ══════════════════════════════════════════════════════
+   app.js — @mrdkmkl photo site
+
+   Features:
+   - Floating x's on launch screen, repelled by mouse
+   - Photo of the day: random pick, no repeats until all seen
+   - Directories: folder grid with cover photo + count
+   - Gallery: 3-col grid, varying aspect ratios, date captions
+   - Lightbox: fullscreen image, stacked metadata, prev/next,
+               keyboard nav, swipe support, close on backdrop
+   - @mrdkmkl watermark on every photo (via CSS)
+══════════════════════════════════════════════════════ */
+
 
 /* ══════════════════════════════════════
-   X  F I E L D
+   X FIELD
+   5 x's per grid cell, repelled by mouse
 ══════════════════════════════════════ */
 (function buildXField() {
   const field  = document.getElementById('x-field');
-  const CELL   = 90, PER = 5, RADIUS = 85, PUSH = 24;
-  let mouseX = -999, mouseY = -999, allMarks = [];
+  const CELL   = 90;   // cell size in px
+  const PER    = 5;    // x's per cell
+  const RADIUS = 85;   // repulsion radius
+  const PUSH   = 24;   // repulsion strength
+  let mouseX = -999, mouseY = -999;
+  let allMarks = [];
 
   function build() {
-    field.innerHTML = ''; allMarks = [];
+    field.innerHTML = '';
+    allMarks = [];
     const cols = Math.ceil(window.innerWidth  / CELL) + 1;
     const rows = Math.ceil(window.innerHeight / CELL) + 1;
+
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cx = c * CELL, cy = r * CELL;
         const cell = document.createElement('div');
         cell.className = 'x-cell';
         cell.style.cssText = `left:${cx}px;top:${cy}px;width:${CELL}px;height:${CELL}px;`;
+
         for (let i = 0; i < PER; i++) {
           const span = document.createElement('span');
-          span.className = 'x-mark'; span.textContent = 'x';
+          span.className   = 'x-mark';
+          span.textContent = 'x';
           const ox = (Math.random() - 0.5) * (CELL * 0.82);
           const oy = (Math.random() - 0.5) * (CELL * 0.82);
           span.style.left     = (CELL / 2 + ox) + 'px';
@@ -28,7 +49,12 @@
           span.style.fontSize = (11 + Math.random() * 10) + 'px';
           span.style.opacity  = (0.38 + Math.random() * 0.50).toFixed(2);
           cell.appendChild(span);
-          allMarks.push({ el: span, wx: cx+CELL/2+ox, wy: cy+CELL/2+oy, dx:0, dy:0 });
+          allMarks.push({
+            el: span,
+            wx: cx + CELL / 2 + ox,
+            wy: cy + CELL / 2 + oy,
+            dx: 0, dy: 0
+          });
         }
         field.appendChild(cell);
       }
@@ -41,12 +67,14 @@
 
   (function tick() {
     for (const m of allMarks) {
-      const ddx = mouseX - m.wx, ddy = mouseY - m.wy;
-      const dist = Math.sqrt(ddx*ddx + ddy*ddy);
+      const ddx  = mouseX - m.wx;
+      const ddy  = mouseY - m.wy;
+      const dist = Math.sqrt(ddx * ddx + ddy * ddy);
       let tx = 0, ty = 0;
       if (dist < RADIUS && dist > 0) {
         const f = (RADIUS - dist) / RADIUS;
-        tx = -(ddx/dist)*f*PUSH; ty = -(ddy/dist)*f*PUSH;
+        tx = -(ddx / dist) * f * PUSH;
+        ty = -(ddy / dist) * f * PUSH;
       }
       m.dx += (tx - m.dx) * 0.14;
       m.dy += (ty - m.dy) * 0.14;
@@ -58,7 +86,7 @@
 
 
 /* ══════════════════════════════════════
-   S C R E E N  S T A C K
+   SCREEN NAVIGATION
 ══════════════════════════════════════ */
 const screens = {
   launch:      document.getElementById('screen-launch'),
@@ -74,11 +102,29 @@ function showScreen(name) {
     const wrap = document.getElementById('gallery-wrap');
     if (wrap) wrap.scrollTop = 0;
   }
+  if (name === 'directories') {
+    const wrap = document.querySelector('.dir-wrap');
+    if (wrap) wrap.scrollTop = 0;
+  }
 }
+
+document.getElementById('start-btn').addEventListener('click', () => {
+  renderDirectories();
+  showScreen('directories');
+});
+document.getElementById('dir-back').addEventListener('click', () => {
+  showScreen('launch');
+});
+document.getElementById('gallery-back').addEventListener('click', () => {
+  showScreen('directories');
+});
 
 
 /* ══════════════════════════════════════
-   P H O T O  O F  T H E  D A Y
+   PHOTO OF THE DAY
+   Picks a random photo from all folders.
+   Tracks seen photos in localStorage so
+   it never repeats until all are shown.
 ══════════════════════════════════════ */
 function initPotd(allPhotos) {
   const frame  = document.getElementById('potd-frame');
@@ -88,11 +134,14 @@ function initPotd(allPhotos) {
     const KEY = 'mrdkmkl_seen';
     let seen = [];
     try { seen = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e) {}
+
     let pool = allPhotos.filter(p => !seen.includes(p.src));
-    if (!pool.length) { seen = []; pool = [...allPhotos]; }
+    if (!pool.length) { seen = []; pool = [...allPhotos]; } // reset when exhausted
+
     const pick = pool[Math.floor(Math.random() * pool.length)];
     seen.push(pick.src);
     try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch(e) {}
+
     frame.innerHTML = `<img src="${pick.src}" alt="${pick.title || ''}">`;
   }
 
@@ -104,7 +153,9 @@ function initPotd(allPhotos) {
 
 
 /* ══════════════════════════════════════
-   D I R E C T O R I E S
+   DIRECTORIES
+   Renders folder grid from FOLDERS config.
+   Built once, cached.
 ══════════════════════════════════════ */
 function renderDirectories() {
   const grid = document.getElementById('folders-grid');
@@ -112,7 +163,7 @@ function renderDirectories() {
   grid.dataset.built = '1';
 
   if (!FOLDERS || !FOLDERS.length) {
-    grid.innerHTML = `<p style="font-size:11px;letter-spacing:.15em;color:var(--mid);padding:20px 0">open photos.js to add your folders.</p>`;
+    grid.innerHTML = `<p style="font-size:11px;letter-spacing:.15em;color:var(--mid);padding:20px 0">no folders found — push photos to github to get started.</p>`;
     return;
   }
 
@@ -143,9 +194,14 @@ function renderDirectories() {
 
 
 /* ══════════════════════════════════════
-   G A L L E R Y
+   GALLERY
+   Opens a folder and renders all photos
+   in a 3-column grid with varied aspect
+   ratios and a "taken on —" date caption.
 ══════════════════════════════════════ */
-let activeFolder  = null;
+let activeFolder = null;
+
+const ASPECTS = ['4/3', '3/4', '1/1', '5/4', '4/5'];
 
 function openGallery(folder) {
   activeFolder = folder;
@@ -160,14 +216,12 @@ function openGallery(folder) {
     return;
   }
 
-  const aspects = ['4/3','3/4','1/1','5/4','4/5'];
-
   folder.photos.forEach((photo, index) => {
     const card   = document.createElement('div');
     card.className = 'photo-card';
     card.style.animationDelay = `${index * 0.04}s`;
 
-    const aspect = aspects[index % aspects.length];
+    const aspect = ASPECTS[index % ASPECTS.length];
 
     card.innerHTML = `
       <div class="photo-card-img-wrap" style="aspect-ratio:${aspect}">
@@ -185,7 +239,15 @@ function openGallery(folder) {
 
 
 /* ══════════════════════════════════════
-   L I G H T B O X
+   LIGHTBOX
+   Fullscreen image with stacked meta:
+     title (italic serif)
+     taken on:  [date in gold]
+     shot with: [camera in grey]
+     counter (bottom-right)
+
+   Navigation: arrows, keyboard, swipe
+   Close: × button, Escape, backdrop click
 ══════════════════════════════════════ */
 let lbIndex = 0;
 
@@ -199,60 +261,55 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.add('hidden');
 }
 
-function renderLightbox(transition = true) {
-  const photos = activeFolder.photos;
-  const photo  = photos[lbIndex];
-  const total  = photos.length;
+function renderLightbox(animate) {
+  const photos  = activeFolder.photos;
+  const photo   = photos[lbIndex];
+  const total   = photos.length;
 
-  const img    = document.getElementById('lb-img');
-  const title  = document.getElementById('lb-title');
-  const tags   = document.getElementById('lb-tags');
+  const img     = document.getElementById('lb-img');
+  const title   = document.getElementById('lb-title');
+  const tags    = document.getElementById('lb-tags');
   const counter = document.getElementById('lb-counter');
 
-  /* image transition */
-  if (transition) {
+  // image fade transition
+  if (animate) {
     img.style.opacity   = '0';
     img.style.transform = 'scale(0.97)';
     setTimeout(() => {
-      img.src = photo.src;
+      img.src             = photo.src;
       img.style.opacity   = '1';
       img.style.transform = 'scale(1)';
     }, 180);
   } else {
-    img.src = photo.src;
+    img.src             = photo.src;
     img.style.opacity   = '1';
     img.style.transform = 'scale(1)';
   }
 
-  /* title */
+  // title
   title.textContent = photo.title || 'untitled';
 
-  /* labeled tags */
+  // stacked labeled tags
   tags.innerHTML = '';
+  if (photo.date)   tags.appendChild(makeTag('taken on',  photo.date,   'date'));
+  if (photo.camera) tags.appendChild(makeTag('shot with', photo.camera, 'camera'));
 
-  if (photo.date) {
-    tags.appendChild(makeTag('taken on', photo.date, 'date'));
-  }
-  if (photo.camera) {
-    tags.appendChild(makeTag('shot with', photo.camera, 'camera'));
-  }
-
-  /* counter */
+  // photo counter
   counter.textContent = `${lbIndex + 1} / ${total}`;
 
-  /* arrows */
+  // hide arrows when only one photo
   document.getElementById('lb-prev').style.display = total > 1 ? '' : 'none';
   document.getElementById('lb-next').style.display = total > 1 ? '' : 'none';
 }
 
 function makeTag(label, value, type) {
-  const wrap = document.createElement('div');
-  wrap.className = `lb-tag lb-tag--${type}`;
-  wrap.innerHTML = `
+  const div = document.createElement('div');
+  div.className = `lb-tag lb-tag--${type}`;
+  div.innerHTML = `
     <span class="lb-tag-label">${label}:</span>
     <span class="lb-tag-value">${value}</span>
   `;
-  return wrap;
+  return div;
 }
 
 function lbPrev() {
@@ -264,26 +321,17 @@ function lbNext() {
   renderLightbox(true);
 }
 
-/* swipe support */
-let touchStartX = 0;
-document.getElementById('lightbox').addEventListener('touchstart', e => {
-  touchStartX = e.changedTouches[0].clientX;
-}, { passive: true });
-document.getElementById('lightbox').addEventListener('touchend', e => {
-  const dx = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(dx) > 50) { dx < 0 ? lbNext() : lbPrev(); }
-});
-
+// button events
 document.getElementById('lb-close').addEventListener('click', closeLightbox);
 document.getElementById('lb-prev').addEventListener('click', lbPrev);
 document.getElementById('lb-next').addEventListener('click', lbNext);
 
-/* close on backdrop */
+// close on dark backdrop click
 document.getElementById('lightbox').addEventListener('click', e => {
   if (e.target === document.getElementById('lightbox')) closeLightbox();
 });
 
-/* keyboard */
+// keyboard navigation
 document.addEventListener('keydown', e => {
   if (document.getElementById('lightbox').classList.contains('hidden')) return;
   if (e.key === 'Escape')     closeLightbox();
@@ -291,26 +339,19 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') lbNext();
 });
 
-
-/* ══════════════════════════════════════
-   N A V I G A T I O N
-══════════════════════════════════════ */
-document.getElementById('start-btn').addEventListener('click', () => {
-  renderDirectories();
-  showScreen('directories');
+// swipe navigation (mobile)
+let touchStartX = 0;
+document.getElementById('lightbox').addEventListener('touchstart', e => {
+  touchStartX = e.changedTouches[0].clientX;
+}, { passive: true });
+document.getElementById('lightbox').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  if (Math.abs(dx) > 50) dx < 0 ? lbNext() : lbPrev();
 });
-document.getElementById('dir-back').addEventListener('click', () => showScreen('launch'));
-document.getElementById('gallery-back').addEventListener('click', () => showScreen('directories'));
 
 
 /* ══════════════════════════════════════
-   B O O T
-══════════════════════════════════════ */
-const allPhotos = (FOLDERS || []).flatMap(f => f.photos || []);
-initPotd(allPhotos);
-
-/* ══════════════════════════════════════
-   B O O T
+   BOOT
 ══════════════════════════════════════ */
 const allPhotos = (FOLDERS || []).flatMap(f => f.photos || []);
 initPotd(allPhotos);
