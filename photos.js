@@ -23,29 +23,7 @@
 
 const FOLDERS = [
 
-
-  {
-    name: "giggles",
-    photos: 
-  [
-    {src:    "photos/giggles/dogger.png",
-    title:  "Dogger",
-    date:   "Feb 2025",
-    camera: "Canon M50 MRK II w/ 15-55mm lens"}
-  ] }
-  
-    {
-    name: "MACKINAC ISLAND",
-    photos: 
-  [
-    {src:    "photos/MACKINAC_ISLAND/_DSC8383.JPG",
-    title:  "Dogger",
-    date:   "Feb 2025",
-    camera: "Canon M50 MRK II w/ 15-55mm lens"}
   ]
-
-  
-  },
   
   
   
