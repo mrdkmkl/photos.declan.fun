@@ -1,33 +1,48 @@
 /**
  * .github/scripts/generate-photos.js
  *
- * Runs automatically via GitHub Actions whenever you push
- * anything inside the /photos folder.
+ * Auto-runs via GitHub Actions on every push to /photos.
+ * Scans folders, reads sidecar .json files, and writes photos.js.
  *
- * What it does:
- *   1. Scans every subfolder inside /photos
- *   2. Finds all image files (.jpg .jpeg .png .webp .gif .avif)
- *   3. For each image, looks for a matching .json sidecar file
- *   4. Writes the full FOLDERS array to photos.js
+ * ─────────────────────────────────────────────────────────────
+ * SMART DEFAULTS (no sidecar needed)
+ * ─────────────────────────────────────────────────────────────
  *
- * ─────────────────────────────────────────
- * HOW TO ADD METADATA FOR A PHOTO
- * ─────────────────────────────────────────
- * Create a .json file with the same base name as your image:
+ *  Title   — if no title in sidecar, the filename is cleaned up
+ *             and used as the title automatically.
+ *             e.g. "rainy-night-tokyo.jpg" → "rainy night tokyo"
+ *
+ *  Camera  — if the filename starts with "16" (e.g. 16_photo.jpg,
+ *             16-sunset.jpg, IMG_1600.jpg) the camera is set to
+ *             "iPhone 16" automatically unless overridden in sidecar.
+ *
+ * ─────────────────────────────────────────────────────────────
+ * PHOTO SIDECAR  (optional, place next to image file)
+ * ─────────────────────────────────────────────────────────────
  *
  *   photos/streets/rainy-night.jpg
- *   photos/streets/rainy-night.json  ← sidecar
+ *   photos/streets/rainy-night.json
  *
- * Sidecar format:
  *   {
- *     "title":  "rainy night, shibuya",
+ *     "title":  "rainy night, tokyo",
  *     "date":   "march 2024",
  *     "camera": "fujifilm x100v — f2.0 1/60 iso 3200"
  *   }
  *
- * All fields are optional. If you skip the .json the photo
- * still appears — the lightbox will just show "untitled"
- * with no date or camera info.
+ * ─────────────────────────────────────────────────────────────
+ * FOLDER METADATA  (optional, controls how folder appears)
+ * ─────────────────────────────────────────────────────────────
+ *
+ *   photos/streets/folder.json
+ *
+ *   {
+ *     "label":       "streets",          ← display name (overrides folder name)
+ *     "description": "urban wandering",  ← shown under folder name in grid
+ *     "cover":       "rainy-night.jpg",  ← specific cover photo (filename only)
+ *     "order":       1                   ← sort order in the directory (lower = first)
+ *   }
+ *
+ * All folder.json fields are optional.
  */
 
 const fs   = require('fs');
@@ -37,6 +52,23 @@ const PHOTOS_DIR = path.join(__dirname, '..', '..', 'photos');
 const OUT_FILE   = path.join(__dirname, '..', '..', 'photos.js');
 
 const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']);
+
+/* ── clean a filename into a readable title ── */
+function filenameToTitle(base) {
+  return base
+    .replace(/[-_]+/g, ' ')       // dashes/underscores → spaces
+    .replace(/\.[^.]+$/, '')      // strip leftover extension just in case
+    .replace(/\b\w/g, c => c)     // leave lowercase (site style is lowercase)
+    .trim();
+}
+
+/* ── detect iPhone 16 from filename ── */
+function detectCamera(base, metaCamera) {
+  if (metaCamera) return metaCamera;
+  // matches filenames that START with "16" (digit sequence)
+  if (/^16/i.test(base)) return 'iPhone 16';
+  return '';
+}
 
 function scan() {
   if (!fs.existsSync(PHOTOS_DIR)) {
@@ -49,10 +81,18 @@ function scan() {
     .filter(e => e.isDirectory())
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return dirs.map(dir => {
+  const folders = dirs.map(dir => {
     const folderPath = path.join(PHOTOS_DIR, dir.name);
     const files      = fs.readdirSync(folderPath, { withFileTypes: true });
 
+    /* read optional folder.json */
+    let folderMeta = {};
+    const folderMetaPath = path.join(folderPath, 'folder.json');
+    if (fs.existsSync(folderMetaPath)) {
+      try { folderMeta = JSON.parse(fs.readFileSync(folderMetaPath, 'utf8')); } catch(e) {}
+    }
+
+    /* collect image files */
     const photos = files
       .filter(f => f.isFile() && IMAGE_EXTS.has(path.extname(f.name).toLowerCase()))
       .sort((a, b) => a.name.localeCompare(b.name))
@@ -63,32 +103,55 @@ function scan() {
         if (fs.existsSync(sidecar)) {
           try { meta = JSON.parse(fs.readFileSync(sidecar, 'utf8')); } catch(e) {}
         }
+
         return {
           src:    `photos/${dir.name}/${f.name}`,
-          title:  meta.title  || '',
+          title:  meta.title  || filenameToTitle(base),
           date:   meta.date   || '',
-          camera: meta.camera || '',
+          camera: detectCamera(base, meta.camera),
         };
       });
 
-    return { name: dir.name, photos };
+    /* resolve cover photo */
+    let cover = null;
+    if (folderMeta.cover) {
+      // specific cover specified in folder.json
+      cover = `photos/${dir.name}/${folderMeta.cover}`;
+    } else if (photos.length > 0) {
+      cover = photos[0].src;
+    }
+
+    return {
+      name:        folderMeta.label       || dir.name,
+      description: folderMeta.description || '',
+      order:       folderMeta.order       != null ? folderMeta.order : 999,
+      cover,
+      photos,
+    };
   });
+
+  /* sort by order field, then alphabetically */
+  folders.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+
+  /* strip internal 'order' field from output */
+  return folders.map(({ order, ...rest }) => rest);
 }
 
 function write(folders) {
   const header = [
-    '/* AUTO-GENERATED by .github/scripts/generate-photos.js — do not edit by hand */',
-    '/* To add metadata, place a .json sidecar next to each image file.             */',
-    '/* See .github/scripts/generate-photos.js for the sidecar format.             */',
+    '/* AUTO-GENERATED by .github/scripts/generate-photos.js */',
+    '/* Do not edit by hand — push photos to GitHub to update */',
     '',
   ].join('\n');
 
   const body = 'const FOLDERS = ' + JSON.stringify(folders, null, 2) + ';\n';
-
   fs.writeFileSync(OUT_FILE, header + body, 'utf8');
 
-  const totalPhotos = folders.reduce((n, f) => n + f.photos.length, 0);
-  console.log(`✓ photos.js written — ${folders.length} folder(s), ${totalPhotos} photo(s)`);
+  const total = folders.reduce((n, f) => n + f.photos.length, 0);
+  console.log(`✓ photos.js written — ${folders.length} folder(s), ${total} photo(s)`);
+  folders.forEach(f => {
+    console.log(`  ${f.name.padEnd(20)} ${f.photos.length} photo(s)${f.description ? ' — ' + f.description : ''}`);
+  });
 }
 
 write(scan());
