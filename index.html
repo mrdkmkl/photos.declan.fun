@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>@mrdkmkl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="x-field"></div>
+
+  <!-- ── launch ── -->
+  <div class="screen" id="screen-launch">
+    <div class="launch-inner">
+      <div class="welcome">welcome.</div>
+      <button class="start-btn" id="start-btn">start</button>
+      <div style="height:8px"></div>
+      <div class="potd-wrap">
+        <span class="potd-label">photo of the day</span>
+        <button class="potd-toggle" id="potd-toggle">preview</button>
+        <div class="potd-frame" id="potd-frame">
+          <div class="potd-empty">no photos yet</div>
+        </div>
+      </div>
+    </div>
+    <span class="footer">made by @mrdkmkl</span>
+  </div>
+
+  <!-- ── directories ── -->
+  <div class="screen hidden" id="screen-directories">
+    <div class="dir-wrap">
+      <div class="dir-top">
+        <div class="dir-title">gallery.</div>
+        <button class="nav-back" id="dir-back">← back</button>
+      </div>
+      <div class="folders-grid" id="folders-grid"></div>
+    </div>
+    <span class="footer">made by @mrdkmkl</span>
+  </div>
+
+  <!-- ── gallery ── -->
+  <div class="screen hidden" id="screen-gallery">
+    <div class="gallery-wrap" id="gallery-wrap">
+      <div class="gallery-top">
+        <div class="gallery-title" id="gallery-title"></div>
+        <button class="nav-back" id="gallery-back">← back</button>
+      </div>
+      <div class="photo-grid" id="photo-grid"></div>
+    </div>
+    <span class="footer">made by @mrdkmkl</span>
+  </div>
+
+  <!-- ── lightbox ── -->
+  <div id="lightbox" class="lightbox hidden">
+    <button class="lb-close" id="lb-close">✕</button>
+    <button class="lb-prev"  id="lb-prev">‹</button>
+    <button class="lb-next"  id="lb-next">›</button>
+
+    <div class="lb-inner">
+      <div class="lb-img-wrap">
+        <img id="lb-img" src="" alt="">
+      </div>
+      <div class="lb-meta">
+        <div class="lb-title" id="lb-title"></div>
+        <div class="lb-tags"  id="lb-tags"></div>
+        <div class="lb-counter" id="lb-counter"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="photos.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
