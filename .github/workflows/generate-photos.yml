@@ -1,0 +1,28 @@
+name: Generate photos.js
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'photos/**'
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Scan photos and generate photos.js
+        run: node .github/scripts/generate-photos.js
+
+      - name: Commit photos.js if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add photos.js
+          git diff --cached --quiet || git commit -m "chore: auto-update photos.js"
+          git push
