@@ -12,5 +12,70 @@ const FOLDERS = [
         "camera": ""
       }
     ]
+  },
+  {
+    "name": "pro",
+    "photos": [
+      {
+        "src": "photos/pro/_DSC8369 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/_DSC8376 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5001 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5002 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5003 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5006 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5021 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_5224 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_9027 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/IMG_9028 Small.jpeg",
+        "title": "",
+        "date": "",
+        "camera": ""
+      }
+    ]
   }
 ];
