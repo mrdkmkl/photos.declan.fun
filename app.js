@@ -1,60 +1,38 @@
 /* ══════════════════════════════════════════════════════
    app.js — @mrdkmkl photo site
-
-   Features:
-   - Floating x's on launch screen, repelled by mouse
-   - Photo of the day: random pick, no repeats until all seen
-   - Directories: folder grid with cover photo + count
-   - Gallery: 3-col grid, varying aspect ratios, date captions
-   - Lightbox: fullscreen image, stacked metadata, prev/next,
-               keyboard nav, swipe support, close on backdrop
-   - @mrdkmkl watermark on every photo (via CSS)
 ══════════════════════════════════════════════════════ */
 
 
 /* ══════════════════════════════════════
-   X FIELD
-   5 x's per grid cell, repelled by mouse
+   X FIELD  — launch screen background
+   5 x's per cell, smooth mouse repulsion
 ══════════════════════════════════════ */
 (function buildXField() {
   const field  = document.getElementById('x-field');
-  const CELL   = 90;   // cell size in px
-  const PER    = 5;    // x's per cell
-  const RADIUS = 85;   // repulsion radius
-  const PUSH   = 24;   // repulsion strength
-  let mouseX = -999, mouseY = -999;
-  let allMarks = [];
+  const CELL   = 90, PER = 5, RADIUS = 85, PUSH = 24;
+  let mouseX = -999, mouseY = -999, allMarks = [];
 
   function build() {
-    field.innerHTML = '';
-    allMarks = [];
+    field.innerHTML = ''; allMarks = [];
     const cols = Math.ceil(window.innerWidth  / CELL) + 1;
     const rows = Math.ceil(window.innerHeight / CELL) + 1;
-
     for (let r = 0; r < rows; r++) {
       for (let c = 0; c < cols; c++) {
         const cx = c * CELL, cy = r * CELL;
         const cell = document.createElement('div');
         cell.className = 'x-cell';
         cell.style.cssText = `left:${cx}px;top:${cy}px;width:${CELL}px;height:${CELL}px;`;
-
         for (let i = 0; i < PER; i++) {
           const span = document.createElement('span');
-          span.className   = 'x-mark';
-          span.textContent = 'x';
-          const ox = (Math.random() - 0.5) * (CELL * 0.82);
-          const oy = (Math.random() - 0.5) * (CELL * 0.82);
+          span.className = 'x-mark'; span.textContent = 'x';
+          const ox = (Math.random() - 0.5) * CELL * 0.82;
+          const oy = (Math.random() - 0.5) * CELL * 0.82;
           span.style.left     = (CELL / 2 + ox) + 'px';
           span.style.top      = (CELL / 2 + oy) + 'px';
           span.style.fontSize = (11 + Math.random() * 10) + 'px';
           span.style.opacity  = (0.38 + Math.random() * 0.50).toFixed(2);
           cell.appendChild(span);
-          allMarks.push({
-            el: span,
-            wx: cx + CELL / 2 + ox,
-            wy: cy + CELL / 2 + oy,
-            dx: 0, dy: 0
-          });
+          allMarks.push({ el: span, wx: cx + CELL/2 + ox, wy: cy + CELL/2 + oy, dx: 0, dy: 0 });
         }
         field.appendChild(cell);
       }
@@ -67,8 +45,7 @@
 
   (function tick() {
     for (const m of allMarks) {
-      const ddx  = mouseX - m.wx;
-      const ddy  = mouseY - m.wy;
+      const ddx = mouseX - m.wx, ddy = mouseY - m.wy;
       const dist = Math.sqrt(ddx * ddx + ddy * ddy);
       let tx = 0, ty = 0;
       if (dist < RADIUS && dist > 0) {
@@ -76,8 +53,8 @@
         tx = -(ddx / dist) * f * PUSH;
         ty = -(ddy / dist) * f * PUSH;
       }
-      m.dx += (tx - m.dx) * 0.14;
-      m.dy += (ty - m.dy) * 0.14;
+      m.dx += (tx - m.dx) * 0.13;
+      m.dy += (ty - m.dy) * 0.13;
       m.el.style.transform = `translate(${m.dx.toFixed(2)}px,${m.dy.toFixed(2)}px)`;
     }
     requestAnimationFrame(tick);
@@ -99,12 +76,7 @@ function showScreen(name) {
     el.classList.toggle('hidden', k !== name);
   });
   if (name === 'gallery') {
-    const wrap = document.getElementById('gallery-wrap');
-    if (wrap) wrap.scrollTop = 0;
-  }
-  if (name === 'directories') {
-    const wrap = document.querySelector('.dir-wrap');
-    if (wrap) wrap.scrollTop = 0;
+    document.getElementById('gallery-wrap').scrollTop = 0;
   }
 }
 
@@ -112,19 +84,15 @@ document.getElementById('start-btn').addEventListener('click', () => {
   renderDirectories();
   showScreen('directories');
 });
-document.getElementById('dir-back').addEventListener('click', () => {
-  showScreen('launch');
-});
-document.getElementById('gallery-back').addEventListener('click', () => {
-  showScreen('directories');
-});
+document.getElementById('dir-back').addEventListener('click', () => showScreen('launch'));
+document.getElementById('gallery-back').addEventListener('click', () => showScreen('directories'));
 
 
 /* ══════════════════════════════════════
    PHOTO OF THE DAY
-   Picks a random photo from all folders.
-   Tracks seen photos in localStorage so
-   it never repeats until all are shown.
+   Random pick across all photos, no
+   repeats until every photo shown once.
+   State stored in localStorage.
 ══════════════════════════════════════ */
 function initPotd(allPhotos) {
   const frame  = document.getElementById('potd-frame');
@@ -134,14 +102,11 @@ function initPotd(allPhotos) {
     const KEY = 'mrdkmkl_seen';
     let seen = [];
     try { seen = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e) {}
-
     let pool = allPhotos.filter(p => !seen.includes(p.src));
-    if (!pool.length) { seen = []; pool = [...allPhotos]; } // reset when exhausted
-
+    if (!pool.length) { seen = []; pool = [...allPhotos]; }
     const pick = pool[Math.floor(Math.random() * pool.length)];
     seen.push(pick.src);
     try { localStorage.setItem(KEY, JSON.stringify(seen)); } catch(e) {}
-
     frame.innerHTML = `<img src="${pick.src}" alt="${pick.title || ''}">`;
   }
 
@@ -154,8 +119,10 @@ function initPotd(allPhotos) {
 
 /* ══════════════════════════════════════
    DIRECTORIES
-   Renders folder grid from FOLDERS config.
-   Built once, cached.
+   Reads from FOLDERS (generated by Action).
+   Shows: cover photo, folder name,
+   optional description, photo count.
+   Supports folder.json order & label.
 ══════════════════════════════════════ */
 function renderDirectories() {
   const grid = document.getElementById('folders-grid');
@@ -163,17 +130,18 @@ function renderDirectories() {
   grid.dataset.built = '1';
 
   if (!FOLDERS || !FOLDERS.length) {
-    grid.innerHTML = `<p style="font-size:11px;letter-spacing:.15em;color:var(--mid);padding:20px 0">no folders found — push photos to github to get started.</p>`;
+    grid.innerHTML = `<p style="font-size:11px;letter-spacing:.15em;color:var(--mid);padding:20px 0;grid-column:1/-1">push photos to github to get started.</p>`;
     return;
   }
 
   FOLDERS.forEach((folder, fi) => {
-    const cover = folder.photos && folder.photos.length ? folder.photos[0].src : null;
+    const cover = folder.cover
+      || (folder.photos && folder.photos.length ? folder.photos[0].src : null);
     const count = folder.photos ? folder.photos.length : 0;
 
     const div = document.createElement('div');
     div.className = 'folder';
-    div.style.animationDelay = `${fi * 0.06}s`;
+    div.style.animationDelay = `${fi * 0.055}s`;
 
     div.innerHTML = `
       <div class="folder-thumb">
@@ -183,6 +151,7 @@ function renderDirectories() {
       </div>
       <div class="folder-info">
         <div class="folder-name">${folder.name}</div>
+        ${folder.description ? `<div class="folder-desc">${folder.description}</div>` : ''}
         <div class="folder-count">${count} photo${count !== 1 ? 's' : ''}</div>
       </div>
     `;
@@ -195,13 +164,11 @@ function renderDirectories() {
 
 /* ══════════════════════════════════════
    GALLERY
-   Opens a folder and renders all photos
-   in a 3-column grid with varied aspect
-   ratios and a "taken on —" date caption.
+   Uniform 4:3 crop grid (enforced via CSS).
+   "taken on —" date caption below each photo.
+   Cards stagger in on open.
 ══════════════════════════════════════ */
 let activeFolder = null;
-
-const ASPECTS = ['4/3', '3/4', '1/1', '5/4', '4/5'];
 
 function openGallery(folder) {
   activeFolder = folder;
@@ -217,14 +184,12 @@ function openGallery(folder) {
   }
 
   folder.photos.forEach((photo, index) => {
-    const card   = document.createElement('div');
+    const card = document.createElement('div');
     card.className = 'photo-card';
-    card.style.animationDelay = `${index * 0.04}s`;
-
-    const aspect = ASPECTS[index % ASPECTS.length];
+    card.style.animationDelay = `${index * 0.035}s`;
 
     card.innerHTML = `
-      <div class="photo-card-img-wrap" style="aspect-ratio:${aspect}">
+      <div class="photo-card-img-wrap">
         <img src="${photo.src}" alt="${photo.title || ''}" loading="lazy">
       </div>
       ${photo.date ? `<div class="photo-card-date">taken on — ${photo.date}</div>` : ''}
@@ -240,14 +205,15 @@ function openGallery(folder) {
 
 /* ══════════════════════════════════════
    LIGHTBOX
-   Fullscreen image with stacked meta:
+   Fixed-height image box so all photos
+   render at the same size regardless of
+   aspect ratio (object-fit: contain).
+   Smooth cross-fade on navigation.
+   Meta panel stacked below:
      title (italic serif)
-     taken on:  [date in gold]
-     shot with: [camera in grey]
-     counter (bottom-right)
-
-   Navigation: arrows, keyboard, swipe
-   Close: × button, Escape, backdrop click
+     taken on:  [gold]
+     shot with: [grey]
+     counter    [right-aligned]
 ══════════════════════════════════════ */
 let lbIndex = 0;
 
@@ -261,7 +227,7 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.add('hidden');
 }
 
-function renderLightbox(animate) {
+function renderLightbox(transition) {
   const photos  = activeFolder.photos;
   const photo   = photos[lbIndex];
   const total   = photos.length;
@@ -271,44 +237,43 @@ function renderLightbox(animate) {
   const tags    = document.getElementById('lb-tags');
   const counter = document.getElementById('lb-counter');
 
-  // image fade transition
-  if (animate) {
+  if (transition) {
+    /* fade out → swap → fade in */
     img.style.opacity   = '0';
-    img.style.transform = 'scale(0.97)';
+    img.style.transform = 'scale(0.98)';
+    title.style.opacity = '0';
+    tags.style.opacity  = '0';
     setTimeout(() => {
       img.src             = photo.src;
       img.style.opacity   = '1';
       img.style.transform = 'scale(1)';
-    }, 180);
+      title.style.opacity = '1';
+      tags.style.opacity  = '1';
+      populateMeta(photo, title, tags, counter, lbIndex, total);
+    }, 200);
   } else {
     img.src             = photo.src;
     img.style.opacity   = '1';
     img.style.transform = 'scale(1)';
+    populateMeta(photo, title, tags, counter, lbIndex, total);
   }
 
-  // title
-  title.textContent = photo.title || 'untitled';
-
-  // stacked labeled tags
-  tags.innerHTML = '';
-  if (photo.date)   tags.appendChild(makeTag('taken on',  photo.date,   'date'));
-  if (photo.camera) tags.appendChild(makeTag('shot with', photo.camera, 'camera'));
-
-  // photo counter
-  counter.textContent = `${lbIndex + 1} / ${total}`;
-
-  // hide arrows when only one photo
   document.getElementById('lb-prev').style.display = total > 1 ? '' : 'none';
   document.getElementById('lb-next').style.display = total > 1 ? '' : 'none';
+}
+
+function populateMeta(photo, titleEl, tagsEl, counterEl, index, total) {
+  titleEl.textContent = photo.title || 'untitled';
+  tagsEl.innerHTML    = '';
+  if (photo.date)   tagsEl.appendChild(makeTag('taken on',  photo.date,   'date'));
+  if (photo.camera) tagsEl.appendChild(makeTag('shot with', photo.camera, 'camera'));
+  counterEl.textContent = `${index + 1} / ${total}`;
 }
 
 function makeTag(label, value, type) {
   const div = document.createElement('div');
   div.className = `lb-tag lb-tag--${type}`;
-  div.innerHTML = `
-    <span class="lb-tag-label">${label}:</span>
-    <span class="lb-tag-value">${value}</span>
-  `;
+  div.innerHTML = `<span class="lb-tag-label">${label}:</span><span class="lb-tag-value">${value}</span>`;
   return div;
 }
 
@@ -321,17 +286,15 @@ function lbNext() {
   renderLightbox(true);
 }
 
-// button events
+/* events */
 document.getElementById('lb-close').addEventListener('click', closeLightbox);
 document.getElementById('lb-prev').addEventListener('click', lbPrev);
 document.getElementById('lb-next').addEventListener('click', lbNext);
 
-// close on dark backdrop click
 document.getElementById('lightbox').addEventListener('click', e => {
   if (e.target === document.getElementById('lightbox')) closeLightbox();
 });
 
-// keyboard navigation
 document.addEventListener('keydown', e => {
   if (document.getElementById('lightbox').classList.contains('hidden')) return;
   if (e.key === 'Escape')     closeLightbox();
@@ -339,7 +302,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') lbNext();
 });
 
-// swipe navigation (mobile)
+/* swipe */
 let touchStartX = 0;
 document.getElementById('lightbox').addEventListener('touchstart', e => {
   touchStartX = e.changedTouches[0].clientX;
