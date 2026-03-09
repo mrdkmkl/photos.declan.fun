@@ -15,7 +15,7 @@ const FOLDERS = [
     ]
   },
   {
-    "name": "pro",
+    "name": "MACKINAC ISLAND",
     "description": "",
     "cover": "photos/pro/_DSC8401.JPG",
     "photos": [
