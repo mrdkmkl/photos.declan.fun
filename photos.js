@@ -17,38 +17,8 @@ const FOLDERS = [
   {
     "name": "pro",
     "description": "",
-    "cover": "photos/pro/_DSC8383.JPG",
+    "cover": "photos/pro/_DSC8401.JPG",
     "photos": [
-      {
-        "src": "photos/pro/_DSC8383.JPG",
-        "title": "DSC8383",
-        "date": "",
-        "camera": ""
-      },
-      {
-        "src": "photos/pro/_DSC8390.JPG",
-        "title": "DSC8390",
-        "date": "",
-        "camera": ""
-      },
-      {
-        "src": "photos/pro/_DSC8391.JPG",
-        "title": "DSC8391",
-        "date": "",
-        "camera": ""
-      },
-      {
-        "src": "photos/pro/_DSC8395.JPG",
-        "title": "DSC8395",
-        "date": "",
-        "camera": ""
-      },
-      {
-        "src": "photos/pro/_DSC8396.JPG",
-        "title": "DSC8396",
-        "date": "",
-        "camera": ""
-      },
       {
         "src": "photos/pro/_DSC8401.JPG",
         "title": "DSC8401",
