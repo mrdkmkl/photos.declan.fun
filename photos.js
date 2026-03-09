@@ -17,8 +17,14 @@ const FOLDERS = [
   {
     "name": "pro",
     "description": "",
-    "cover": "photos/pro/_DSC8432.JPG",
+    "cover": "photos/pro/_DSC8383.JPG",
     "photos": [
+      {
+        "src": "photos/pro/_DSC8383.JPG",
+        "title": "DSC8383",
+        "date": "",
+        "camera": ""
+      },
       {
         "src": "photos/pro/_DSC8432.JPG",
         "title": "DSC8432",
