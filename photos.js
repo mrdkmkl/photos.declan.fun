@@ -110,6 +110,24 @@ const FOLDERS = [
         "camera": ""
       },
       {
+        "src": "photos/pro/_DSC8425.JPG",
+        "title": "DSC8425",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/_DSC8430.JPG",
+        "title": "DSC8430",
+        "date": "",
+        "camera": ""
+      },
+      {
+        "src": "photos/pro/_DSC8431.JPG",
+        "title": "DSC8431",
+        "date": "",
+        "camera": ""
+      },
+      {
         "src": "photos/pro/_DSC8432.JPG",
         "title": "DSC8432",
         "date": "",
